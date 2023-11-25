@@ -36,6 +36,7 @@ def update_animation(json_data, pixels, animation_state: AnimationState):
 file_path = "npd.json"
 
 # Set the desired FPS for your animation
+slow_fps = 5
 basic_fps = 30
 regular_fps = 45
 fast_fps = 60
@@ -94,6 +95,16 @@ def mix_colors(color1, color2, position):
     mixed_color = tuple(int((1 - position) * c1 + position * c2) for c1, c2 in zip(color1, color2))
     return mixed_color
 
+def rindex(lst, value):
+    lst.reverse()
+    try:
+        i = lst.index(value)
+    except ValueError:
+        return None
+    lst.reverse()
+    return len(lst) - i - 1
+
+
 # Create the observer and start monitoring
 event_handler = MyHandler()
 observer = Observer()
@@ -102,10 +113,20 @@ observer.start()
 
 try:
     animation_step = 1
+    previous_animation = ""
+
     fade_stage = 0
     swipe_stage = 0
 
     while True:
+        if previous_animation != animation_state.effect: # reset animaton data
+            pixels.fill((0, 0, 0))
+
+            previous_animation = animation_state.effect
+            animation_step = 1
+            fade_stage = 0
+            swipe_stage = 0
+
         # Set NeoPixels based on the "None" effect
         if animation_state.effect == "None" and animation_state.state == "ON":
             pixels.fill((animation_state.color["r"], animation_state.color["g"], animation_state.color["b"]))
@@ -201,16 +222,32 @@ try:
             time.sleep(1 / basic_fps)
         elif animation_state.effect == "WipeRedToGreen" and animation_state.state == "ON":
             if swipe_stage == 0:
-                pixels[int(animation_step / 255 * num_pixels) - 1] = (255, 0, 0)
-                if animation_step == 255:
+                last_pixel = rindex(list(pixels), [255, 0, 0])
+                if last_pixel == None:
+                    last_pixel = -1
+
+                if last_pixel + 2 > num_pixels:
                     swipe_stage = 1
+                else:
+                    pixels[last_pixel + 1] = (255, 0, 0)
             else:
-                pixels[int(animation_step / 255 * num_pixels) - 1] = (0, 255, 0)
-                if animation_step == 255:
+                last_pixel = rindex(list(pixels), [0, 255, 0])
+                if last_pixel == None:
+                    last_pixel = -1
+
+                if last_pixel + 2 > num_pixels:
                     swipe_stage = 0
+                else:
+                    pixels[last_pixel + 1] = (0, 255, 0)
 
             pixels.brightness = animation_state.brightness / 255.0
             time.sleep(1 / fast_fps)
+        elif animation_state.effect == "Random" and animation_state.state == "ON":
+            for i in range(num_pixels):
+                pixels[i] = (255, 255, 255) if random.randint(0, 1) == 1 else (0, 0, 0)
+
+            pixels.brightness = animation_state.brightness / 255.0
+            time.sleep(1 / slow_fps)
         else: # off state / animation unknown
             pixels.fill((0, 0, 0))
             pixels.brightness = 0.0

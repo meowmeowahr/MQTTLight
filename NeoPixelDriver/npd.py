@@ -112,6 +112,15 @@ observer.schedule(event_handler, path="./", recursive=False)
 observer.start()
 
 try:
+    COLORS = [
+        (255, 0, 0),   # Red
+        (0, 255, 0),   # Green
+        (255, 255, 0), # Yellow
+        (0, 0, 255),   # Blue
+        (255, 127, 0), # Orange
+        (0, 0, 0)      # Off
+    ]
+
     animation_step = 1
     previous_animation = ""
 
@@ -245,6 +254,12 @@ try:
         elif animation_state.effect == "Random" and animation_state.state == "ON":
             for i in range(num_pixels):
                 pixels[i] = (255, 255, 255) if random.randint(0, 1) == 1 else (0, 0, 0)
+
+            pixels.brightness = animation_state.brightness / 255.0
+            time.sleep(1 / slow_fps)
+        elif animation_state.effect == "RandomColor" and animation_state.state == "ON":
+            for i in range(num_pixels):
+                pixels[i] = COLORS[random.randint(0, 5)]
 
             pixels.brightness = animation_state.brightness / 255.0
             time.sleep(1 / slow_fps)
